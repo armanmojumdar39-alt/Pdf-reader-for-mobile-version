@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>PDF রিডার ও মার্কার</title>
+<meta name="theme-color" content="#ffffff">
+<script>window.MOB=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())||innerWidth<=900||(matchMedia&&matchMedia("(pointer:coarse)").matches);if(MOB)document.documentElement.classList.add("mob")</script>
+<link rel="stylesheet" href="mobile.css">
+<script src="lib/pdf.min.js"></script>
+<script src="lib/pdf-lib.min.js"></script>
+<script src="native.js"></script>
+<style>
+:root{--bg:#e9ecf2;--bar:#fff;--tx:#1d2330;--ac:#2f6df6;--bd:#d6dae4;--sb:#f7f8fb}
+body.dark{--bg:#1b1e26;--bar:#262a35;--tx:#e8eaf0;--bd:#3a3f4d;--sb:#20232c}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:'Noto Sans Bengali','Hind Siliguri',system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;flex-direction:column;font-size:14px}
+#bar{background:var(--bar);border-bottom:1px solid var(--bd);padding:6px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+button,select,input{font:inherit;color:inherit}
+button{background:transparent;border:1px solid var(--bd);border-radius:7px;padding:5px 9px;cursor:pointer;white-space:nowrap}
+button:hover{background:rgba(127,127,127,.15)}button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.sep{width:1px;height:24px;background:var(--bd);margin:0 3px}
+.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid transparent}.sw.on{border-color:var(--tx);background:none}
+input[type=number]{width:54px;padding:4px;background:var(--bar);border:1px solid var(--bd);border-radius:6px}
+input[type=color]{width:26px;height:26px;padding:0;border:none;background:none}
+#st{margin-left:auto;font-size:12px;opacity:.75}
+#main{flex:1;display:flex;min-height:0}
+#side{width:260px;background:var(--sb);border-right:1px solid var(--bd);overflow:auto;padding:10px;display:none}
+#side.show{display:block}#side h4{margin:12px 0 6px}
+.it{padding:6px;border-radius:6px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--bd)}.it:hover{background:rgba(127,127,127,.15)}
+#sq{width:100%;padding:6px;border:1px solid var(--bd);border-radius:6px;background:var(--bar)}
+#view{flex:1;overflow:auto;padding:14px;position:relative}
+.page{position:relative;margin:0 auto 14px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);width:600px;height:800px}
+.page canvas{position:absolute;inset:0}body.dark canvas{filter:invert(.9) hue-rotate(180deg)}
+.textLayer{position:absolute;inset:0;overflow:hidden;line-height:1;--scale-factor:1}
+.textLayer span,.textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
+.textLayer ::selection{background:rgba(47,109,246,.35)}
+.ov{position:absolute;inset:0;pointer-events:none}
+.nt,.tx{pointer-events:auto;cursor:pointer}
+body[data-tool=pen] .ov,body[data-tool=crop] .ov,body[data-tool=rect] .ov,body[data-tool=note] .ov,body[data-tool=text] .ov,body[data-tool=eraser] .ov{pointer-events:auto;touch-action:none;cursor:crosshair}
+body[data-tool=eraser] .ov{cursor:pointer}
+body[data-tool=pen] .textLayer,body[data-tool=crop] .textLayer,body[data-tool=rect] .textLayer,body[data-tool=note] .textLayer,body[data-tool=text] .textLayer,body[data-tool=eraser] .textLayer{pointer-events:none}
+#wel{margin:40px auto;max-width:560px;text-align:center}
+#wel .drop{border:2px dashed var(--bd);border-radius:14px;padding:36px 16px;background:var(--bar)}
+#lib .it{display:flex;justify-content:space-between;text-align:left;background:var(--bar);border-radius:8px;margin-top:6px;border:1px solid var(--bd)}
+.hide{display:none!important}
+@media(max-width:700px){.lb{display:none}#side{position:absolute;z-index:5;height:calc(100% - 50px);width:80%}}
+.mdl{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:10px}
+.box{background:var(--bar);border-radius:12px;padding:14px;width:420px;max-width:100%;max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:8px}.box.wide{width:780px}
+.box label{display:flex;flex-direction:column;gap:3px}.box input,.box select,.box textarea{padding:6px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);font:inherit;color:inherit}
+.rw{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.rw select{flex:1;min-width:150px}
+#dimg{max-width:100%;max-height:230px;object-fit:contain;border:1px solid var(--bd);border-radius:6px;background:#fff;align-self:flex-start}
+#dchat{display:flex;flex-direction:column;gap:6px}.mg{padding:8px 10px;border-radius:10px;line-height:1.65;user-select:text}.mg.u{background:var(--ac);color:#fff;align-self:flex-end}.mg.m{background:var(--bg)}
+.qp button{font-size:12px;padding:3px 7px}
+#cm{position:fixed;z-index:60;background:var(--bar);border:1px solid var(--bd);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.3);padding:4px;min-width:240px}
+#cm div{padding:7px 10px;border-radius:5px;cursor:pointer}#cm div:hover{background:var(--ac);color:#fff}#cm hr{border:0;border-top:1px solid var(--bd);margin:3px 0}
+#set,#kb,#cm{z-index:99999}
+.gd{position:fixed;z-index:100;box-shadow:0 10px 40px rgba(0,0,0,.5);border:1px solid var(--bd);resize:both;min-width:320px}
+.gh{cursor:move;touch-action:none;user-select:none}.gchat{display:flex;flex-direction:column;gap:6px}
+.gi{max-width:100%;max-height:230px;object-fit:contain;border:1px solid var(--bd);border-radius:6px;background:#fff;align-self:flex-start;cursor:zoom-in}
+.qp button span{opacity:.6;margin-left:3px}.qp button span:hover{opacity:1;color:#f33}
+body.placing .ov{pointer-events:auto!important;cursor:copy}body.placing .textLayer{pointer-events:none}
+
+</style></head>
+<body data-tool="sel">
+<div id="bar">
+ <button id="open">📂 PDF খুলুন</button><input type="file" id="fi" accept="application/pdf" class="hide">
+ <button id="tg" title="সাইডবার">☰</button>
+ <span class="sep"></span>
+ <span id="tools">
+  <button data-t="sel" class="on" title="সিলেক্ট/পড়া">✋<span class="lb"> পড়া</span></button>
+  <button data-t="hl" title="হাইলাইট (টেক্সট সিলেক্ট করুন)">🖍<span class="lb"> হাইলাইট</span></button>
+  <button data-t="ul" title="আন্ডারলাইন"><u>U</u><span class="lb"> আন্ডারলাইন</span></button>
+  <button data-t="st" title="স্ট্রাইক"><s>S</s><span class="lb"> কাটা</span></button>
+  <button data-t="pen" title="কলম">✏️<span class="lb"> কলম</span></button>
+  <button data-t="rect" title="বক্স">▭<span class="lb"> বক্স</span></button>
+  <button data-t="note" title="নোট">📝<span class="lb"> নোট</span></button>
+  <button data-t="text" title="টেক্সট">T<span class="lb"> টেক্সট</span></button>
+  <button data-t="eraser" title="মার্ক মুছুন">🧽<span class="lb"> ইরেজার</span></button>
+  <button data-t="crop" title="এলাকা সিলেক্ট করে Gemini-কে জিজ্ঞেস করুন">✂️🤖<span class="lb"> এলাকা→Gemini</span></button>
+ </span>
+ <span class="sep"></span>
+ <span id="cols"></span><input type="color" id="cc" value="#ffd400" title="নিজের রং">
+ <select id="lw" title="কলম/বক্সের মোটা"><option>2</option><option selected>3</option><option>5</option><option>8</option></select>
+ <span class="sep"></span>
+ <button id="un" title="Ctrl+Z">↶</button><button id="re" title="Ctrl+Y">↷</button>
+ <span class="sep"></span>
+ <input type="number" id="pn" min="1" value="1"><span id="pt">/ 0</span>
+ <button id="zo">−</button><button id="zi">＋</button><button id="zf">↔</button>
+ <button id="bm" title="বুকমার্ক">⭐</button><button id="dk" title="ডার্ক মোড">🌙</button>
+ <button id="ex" title="মার্কসহ নতুন PDF ডাউনলোড (ঐচ্ছিক)">⬇<span class="lb"> এক্সপোর্ট</span></button>
+ <button id="gs" title="Gemini সেটিংস (API Key, মডেল)">⚙</button><button id="kbb" title="কীবোর্ড শর্টকাট সেট করুন">⌨</button><button id="mw" title="চালু থাকলে প্রতিবার নতুন Gemini উইন্ডো খুলবে (একাধিক একসাথে)">🪟</button><span id="st"></span>
+</div>
+<div id="main">
+ <div id="side">
+  <input id="sq" placeholder="🔍 লেখা খুঁজুন (Enter)"><div id="sr"></div>
+  <h4>⭐ বুকমার্ক</h4><div id="bml"></div>
+  <h4>🖍 সব মার্ক</h4><div id="lst"></div>
+ </div>
+ <div id="view"><div id="wel"><div class="drop"><h2>PDF রিডার ও মার্কার</h2><p>PDF এখানে ড্রাগ করুন অথবা উপরের “PDF খুলুন” চাপুন।<br>আপনার সব মার্ক নিজে নিজেই সেভ হয়ে যাবে।</p></div><div id="lib"></div></div></div>
+</div>
+<div id="cm" class="hide"></div>
+<div id="set" class="mdl hide"><div class="box"><h3 style="margin:0">⚙ Gemini সেটিংস</h3>
+ <small id="sn">আপনার নিজের Google AI Studio API Key দিন (aistudio.google.com/apikey)। কী শুধু এই ব্রাউজারে থাকবে এবং সরাসরি Google-এ যাবে।</small>
+ <label>API Key <input id="sk" type="password" placeholder="AIza…" autocomplete="off"></label>
+ <label>ডিফল্ট মডেল <select id="sm"></select></label>
+ <label>নিজের মডেল ID (ঐচ্ছিক, যেমন gemini-3-flash-preview) <input id="sc"></label>
+ <label>উত্তরের ভাষা <select id="sl"><option>বাংলা</option><option>English</option><option>বাংলা ও English মিশিয়ে</option></select></label>
+ <div class="rw"><button id="ssv" class="on">সেভ</button><button id="skx">কী মুছুন</button><button id="scl">বন্ধ</button></div></div></div>
+<div id="kb" class="mdl hide"><div class="box"><h3 style="margin:0">⌨ শর্টকাট কী</h3>
+ <small>ঘরে ক্লিক করে পছন্দের কী চাপুন (Backspace = মুছুন)। বাংলা কীবোর্ডেও কাজ করবে। ১–৬ = রং, [ ও ] = কলম/বক্সের মোটা।</small>
+ <div id="kbl"></div><div class="rw"><button id="kbr">ডিফল্ট</button><button id="kbc" class="on">বন্ধ</button></div></div></div>
+<template id="gt"><div class="box wide gd">
+ <div class="rw gh"><b class="gtitle">🤖 Gemini</b><select class="gm"></select><button class="gnw" title="একই ছবি/লেখা নিয়ে আরেকটি আলাদা ডায়লগ খুলুন">⧉ নতুন</button><input type="range" class="gop" min="40" max="100" value="100" title="স্বচ্ছতা" style="width:70px"><button class="gmin" title="ছোট/বড়">—</button><button class="gx" title="বন্ধ">✕</button></div>
+ <div class="gb" style="display:flex;flex-direction:column;gap:8px">
+ <img class="gi" alt="" title="ট্যাপ করলে বড়/ছোট">
+ <div class="gchat"></div>
+ <div class="rw qp gq"></div>
+ <div class="gcomp"><textarea class="gp" rows="2" placeholder="প্রশ্ন লিখুন…"></textarea><button class="gs on">পাঠান ▶</button></div>
+ <details class="gmore"><summary>⋯ আরও অপশন</summary>
+  <div class="rw"><button class="gca">উত্তর কপি</button><button class="gnote">📝 উত্তর নোট হিসেবে PDF-এ রাখুন</button><button class="gci">📋 ছবি কপি</button><button class="gdl">⬇ ছবি সেভ</button></div>
+  <div class="rw"><button class="grg">🔁 আবার উত্তর</button><button class="gcl">🧹 চ্যাট মুছুন</button><button class="gcc">📄 পুরো চ্যাট কপি</button><button class="gtx">💾 চ্যাট .txt</button><button class="gsp">🔊 পড়ে শোনান</button></div>
+  <div class="rw" style="align-items:stretch"><textarea class="gn" rows="2" style="flex:1;min-width:150px" placeholder="নিজের নোট লিখুন (খালি রাখলে Gemini-র শেষ উত্তর বসবে)…"></textarea><button class="gnp" title="চাপার পর PDF-এ যেখানে ইচ্ছা ট্যাপ করুন">📍 PDF-এ নোট বসান</button></div>
+ </details>
+ </div></div></template>
+<script>
+const $=s=>document.querySelector(s),SVG='http://www.w3.org/2000/svg';
+pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js';
+const S=(t,a,p)=>{const e=document.createElementNS(SVG,t);for(const k in a)e.setAttribute(k,a[k]);p&&p.appendChild(e);return e};
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+// ---- storage (IndexedDB) ----
+const DB=new Promise((res,rej)=>{const r=indexedDB.open('pdfmark',1);r.onupgradeneeded=()=>{r.result.createObjectStore('blob');r.result.createObjectStore('meta')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const tx=async(s,m,f)=>{const db=await DB;return new Promise((res,rej)=>{const t=db.transaction(s,m);const q=f(t.objectStore(s));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
+const put=(s,k,v)=>tx(s,'readwrite',o=>o.put(v,k)),get=(s,k)=>tx(s,'readonly',o=>o.get(k)),del=(s,k)=>tx(s,'readwrite',o=>o.delete(k)),all=()=>tx('meta','readonly',o=>o.getAll());
+// ---- state ----
+let pdf,meta,anns={},hist=[],redo=[],scale=1.2,tool='sel',color='#ffd400',bw=595,bh=842,cur=1,curBlob,pages=[],txt={},V=$('#view'),timer;
+const ico={hl:'🖍',ul:'U̲',st:'S̶',pen:'✏️',rect:'▭',note:'📝',text:'T'};
+const COLORS=['#ffd400','#7CFC00','#ff6fa5','#4da3ff','#ff3b30','#111111'];
+$('#cols').innerHTML=COLORS.map((c,i)=>`<button class="sw${i?'':' on'}" style="background:${c}" data-c="${c}"></button>`).join('');
+const lw=()=>+$('#lw').value;
+// ---- save ----
+function dirty(){$('#st').textContent='⏳ সেভ হচ্ছে…';clearTimeout(timer);timer=setTimeout(saveNow,400)}
+async function saveNow(){if(!meta)return;try{await put('meta',meta.id,{...meta,anns,page:cur,scale,ts:Date.now()});const d=new Date();$('#st').textContent='✓ সেভ হয়েছে '+d.toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'})}catch(e){$('#st').textContent='⚠ অটো-সেভ কাজ করছে না'}}
+addEventListener('pagehide',saveNow);document.addEventListener('visibilitychange',()=>document.hidden&&saveNow());
+// ---- library ----
+async function showLib(){let l=[];try{l=(await all()).sort((a,b)=>b.ts-a.ts)}catch(e){}
+ $('#lib').innerHTML=l.length?'<h4>সাম্প্রতিক ফাইল</h4>'+l.map(m=>`<div class="it" data-id="${esc(m.id)}"><span>📄 ${esc(m.name)} <small>(মার্ক: ${Object.values(m.anns||{}).reduce((a,b)=>a+b.length,0)})</small></span><button data-d="${esc(m.id)}">🗑</button></div>`).join(''):''}
+$('#lib').onclick=async e=>{const d=e.target.closest('[data-d]');if(d){e.stopPropagation();if(confirm('এই ফাইল ও এর সব মার্ক মুছবেন?')){await del('meta',d.dataset.d);await del('blob',d.dataset.d);showLib()}return}
+ const it=e.target.closest('[data-id]');if(!it)return;const id=it.dataset.id,m=await get('meta',id),b=await get('blob',id);if(m&&b){meta=m;curBlob=b;start(await b.arrayBuffer())}};
+// ---- open ----
+$('#open').onclick=()=>$('#fi').click();$('#fi').onchange=e=>e.target.files[0]&&openFile(e.target.files[0]);
+addEventListener('dragover',e=>e.preventDefault());addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];f&&f.type==='application/pdf'&&openFile(f)});
+async function openFile(f){const id=f.name+'|'+f.size+'|'+f.lastModified;let m=null;try{m=await get('meta',id);if(!await get('blob',id))await put('blob',id,f)}catch(e){}
+ meta=m||{id,name:f.name,size:f.size,bm:[]};curBlob=f;start(await f.arrayBuffer())}
+async function start(buf){anns=meta.anns||{};meta.bm=meta.bm||[];hist=[];redo=[];txt={};
+ pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf),cMapUrl:"lib/cmaps/",cMapPacked:true,standardFontDataUrl:"lib/standard_fonts/"}).promise;const v=(await pdf.getPage(1)).getViewport({scale:1});bw=v.width;bh=v.height;
+ V.innerHTML='';pages=[];scale=meta.scale||Math.min(1.5,Math.max(.5,(V.clientWidth-30)/bw));
+ for(let n=1;n<=pdf.numPages;n++)V.appendChild(mkPage(n));
+ $('#pt').textContent='/ '+pdf.numPages;$('#pn').max=pdf.numPages;resize();buildList();
+ setTimeout(()=>{if(meta.page>1)goPage(meta.page)},50);dirty()}
+// ---- pages ----
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)render(e.target);else if(window.MOB&&e.target._r){const d=e.target,c=d.querySelector('canvas');if(c){c.width=c.height=0}d._r=0;const tl=d.querySelector('.textLayer');if(tl)tl.innerHTML=''}}),{root:V,rootMargin:window.MOB?'1400px':'700px'});
+function mkPage(n){const d=document.createElement('div');d.className='page';d.dataset.n=n;d.innerHTML='<canvas></canvas><div class="textLayer"></div>';const s=S('svg',{class:'ov'});d.appendChild(s);bind(d,s);pages.push(d);io.observe(d);return d}
+function resize(){pages.forEach(d=>{d._r=0;d.style.width=(d._bw||bw)*scale+'px';d.style.height=(d._bh||bh)*scale+'px';io.unobserve(d);io.observe(d)})}
+async function render(d){if(d._r===scale)return;const sc=d._r=scale,n=+d.dataset.n,p=await pdf.getPage(n),vp=p.getViewport({scale:sc}),dpr=devicePixelRatio||1;
+ const cv=document.createElement('canvas');cv.width=vp.width*dpr;cv.height=vp.height*dpr;cv.style.width=vp.width+'px';cv.style.height=vp.height+'px';
+ try{await p.render({canvasContext:cv.getContext('2d'),viewport:vp,transform:dpr!==1?[dpr,0,0,dpr,0,0]:null}).promise}catch(e){return}
+ if(d._r!==sc)return;d.replaceChild(cv,d.querySelector('canvas'));d._bw=vp.width/sc;d._bh=vp.height/sc;d._w=vp.width;d._h=vp.height;d.style.width=vp.width+'px';d.style.height=vp.height+'px';
+ const tl=d.querySelector('.textLayer');tl.innerHTML='';tl.style.setProperty('--scale-factor',sc);
+ try{pdfjsLib.renderTextLayer({textContentSource:await p.getTextContent(),container:tl,viewport:vp,textDivs:[]})}catch(e){}
+ drawAnn(d)}
+function drawAnn(d){const n=+d.dataset.n,W=d._w,H=d._h,s=d.querySelector('svg');if(!W)return;s.setAttribute('width',W);s.setAttribute('height',H);s.innerHTML='';
+ (anns[n]||[]).forEach((a,i)=>{const k={'data-i':i};
+  if(a.r)a.r.forEach(r=>{const x=r.x*W,y=r.y*H,w=r.w*W,h=r.h*H;
+   if(a.t==='hl')S('rect',{...k,x,y,width:w,height:h,fill:a.c,opacity:.4},s);
+   else{const yy=a.t==='ul'?y+h-1:y+h/2;S('rect',{...k,x,y,width:w,height:h,fill:'transparent'},s);S('line',{...k,x1:x,x2:x+w,y1:yy,y2:yy,stroke:a.c,'stroke-width':2},s)}});
+  if(a.t==='rect')S('rect',{...k,x:a.x*W,y:a.y*H,width:a.w*W,height:a.h*H,fill:'none',stroke:a.c,'stroke-width':a.lw*scale},s);
+  if(a.t==='pen')S('polyline',{...k,points:a.p.map(q=>q[0]*W+','+q[1]*H).join(' '),fill:'none',stroke:a.c,'stroke-width':a.lw*scale,'stroke-linecap':'round','stroke-linejoin':'round'},s);
+  if(a.t==='note'){const t=S('text',{...k,class:'nt',x:a.x*W,y:a.y*H,'font-size':22,'dominant-baseline':'hanging'},s);t.textContent='📝';S('title',{},t).textContent=a.x2}
+  if(a.t==='text'){const t=S('text',{...k,class:'tx',x:a.x*W,y:a.y*H,fill:a.c,'font-size':a.s*scale,'dominant-baseline':'hanging','font-family':'Noto Sans Bengali,sans-serif'},s);t.textContent=a.x2}})}
+const redrawAll=()=>pages.forEach(drawAnn);
+function after(d){d&&drawAnn(d);buildList();dirty()}
+// ---- annotation tools ----
+function snap(){hist.push(JSON.stringify(anns));if(hist.length>100)hist.shift();redo=[]}
+function undo(){if(!hist.length)return;redo.push(JSON.stringify(anns));anns=JSON.parse(hist.pop());redrawAll();buildList();dirty()}
+function redoF(){if(!redo.length)return;hist.push(JSON.stringify(anns));anns=JSON.parse(redo.pop());redrawAll();buildList();dirty()}
+const P=(e,d)=>{const r=d.getBoundingClientRect();return[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]};
+function eraseAt(e,d){const t=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-i]');if(t&&d.contains(t)){snap();anns[d.dataset.n].splice(+t.dataset.i,1);after(d)}}
+function bind(d,svg){let pts,tmp,st,down=0;
+ svg.addEventListener('pointerdown',e=>{if(placing||!['pen','rect','eraser','crop'].includes(tool))return;down=1;svg.setPointerCapture(e.pointerId);const[x,y]=P(e,d),W=d._w,H=d._h;
+  if(tool==='eraser')return eraseAt(e,d);
+  if(tool==='pen'){pts=[[x,y]];tmp=S('polyline',{fill:'none',stroke:color,'stroke-width':lw(),'stroke-linecap':'round','stroke-linejoin':'round'},svg)}
+  else if(tool==='crop'){st=[x,y];tmp=S('rect',{fill:'rgba(47,109,246,.12)',stroke:'#2f6df6','stroke-width':2,'stroke-dasharray':'6 4'},svg)}
+  else{st=[x,y];tmp=S('rect',{fill:'none',stroke:color,'stroke-width':lw()},svg)}});
+ svg.addEventListener('pointermove',e=>{if(!down)return;const[x,y]=P(e,d),W=d._w,H=d._h;
+  if(tool==='eraser')return eraseAt(e,d);
+  if(tool==='pen'){pts.push([x,y]);tmp.setAttribute('points',pts.map(q=>q[0]*W+','+q[1]*H).join(' '))}
+  else if(tmp){tmp.setAttribute('x',Math.min(x,st[0])*W);tmp.setAttribute('y',Math.min(y,st[1])*H);tmp.setAttribute('width',Math.abs(x-st[0])*W);tmp.setAttribute('height',Math.abs(y-st[1])*H)}});
+ svg.addEventListener('pointerup',e=>{if(!down)return;down=0;if(!tmp)return;const n=d.dataset.n,[x,y]=P(e,d);tmp.remove();tmp=null;if(tool==='crop'){$('[data-t=sel]').click();if(Math.abs(x-st[0])>.01&&Math.abs(y-st[1])>.01)cropAsk(d,Math.min(x,st[0]),Math.min(y,st[1]),Math.max(x,st[0]),Math.max(y,st[1]));return}
+  if(tool==='pen'&&pts.length>1){snap();(anns[n]??=[]).push({t:'pen',c:color,lw:lw()/scale,p:pts});after(d)}
+  else if(tool==='rect'&&Math.abs(x-st[0])>.005){snap();(anns[n]??=[]).push({t:'rect',c:color,lw:lw()/scale,x:Math.min(x,st[0]),y:Math.min(y,st[1]),w:Math.abs(x-st[0]),h:Math.abs(y-st[1])});after(d)}});
+ svg.addEventListener('click',e=>{if(placing){const[x,y]=P(e,d);snap();(anns[d.dataset.n]??=[]).push({t:'note',c:color,x,y,x2:placing.v});const pd=placing.done;cancelPlace();pd&&pd();return after(d)}
+  if(tool==='eraser')return;const n=d.dataset.n,t=e.target.closest('.nt,.tx');
+  if(t){const a=anns[n][+t.dataset.i],v=prompt('লেখা বদলান (খালি রাখলে মুছে যাবে):',a.x2);if(v===null)return;snap();v===''?anns[n].splice(+t.dataset.i,1):a.x2=v;return after(d)}
+  if(tool==='note'||tool==='text'){const v=prompt(tool==='note'?'নোট লিখুন:':'টেক্সট লিখুন:');if(!v)return;const[x,y]=P(e,d);snap();(anns[n]??=[]).push({t:tool,c:color,x,y,x2:v,s:16/scale*scale});after(d)}})}
+function selMark(t){t=typeof t==='string'?t:tool;if(!['hl','ul','st'].includes(t))return;const s=getSelection();if(!s.rangeCount||s.isCollapsed)return;const rg=s.getRangeAt(0);let nd=rg.commonAncestorContainer;nd=nd.nodeType===1?nd:nd.parentElement;const d=nd.closest('.page');if(!d)return;
+ const pr=d.getBoundingClientRect(),rs=[];for(const r of rg.getClientRects()){if(r.width<2||r.height<2)continue;rs.push({x:(r.left-pr.left)/pr.width,y:(r.top-pr.top)/pr.height,w:r.width/pr.width,h:r.height/pr.height})}
+ if(!rs.length)return;snap();(anns[d.dataset.n]??=[]).push({t,c:color,r:rs});s.removeAllRanges();after(d)}
+document.addEventListener('mouseup',()=>setTimeout(selMark,10));document.addEventListener('touchend',()=>setTimeout(selMark,350));
+// ---- toolbar ----
+$('#tools').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;tool=b.dataset.t;document.body.dataset.tool=tool;document.querySelectorAll('#tools button').forEach(x=>x.classList.toggle('on',x===b))};
+$('#cols').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;color=b.dataset.c;document.querySelectorAll('.sw').forEach(x=>x.classList.toggle('on',x===b))};
+$('#cc').oninput=e=>{color=e.target.value;document.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'))};
+$('#un').onclick=undo;$('#re').onclick=redoF;$('#tg').onclick=()=>$('#side').classList.toggle('show');
+addEventListener('keydown',e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo()}if(e.ctrlKey&&e.key==='y'){e.preventDefault();redoF()}if(e.key==='Escape'){$('[data-t=sel]').click();$('#cm').classList.add('hide');cancelPlace()}if(!e.ctrlKey&&!e.metaKey&&!e.altKey)hotkey(e)});
+function zoom(s){if(!pdf)return;const f=V.scrollTop/V.scrollHeight;scale=Math.min(4,Math.max(.4,s));resize();V.scrollTop=f*V.scrollHeight;dirty()}
+$('#zi').onclick=()=>zoom(scale+.15);$('#zo').onclick=()=>zoom(scale-.15);$('#zf').onclick=()=>zoom((V.clientWidth-30)/bw);
+V.addEventListener('wheel',e=>{if(e.ctrlKey){e.preventDefault();zoom(scale*(e.deltaY<0?1.1:.9))}},{passive:false});
+function goPage(n){n=Math.min(pdf.numPages,Math.max(1,n));pages[n-1].scrollIntoView();}
+$('#pn').onchange=e=>goPage(+e.target.value);
+let raf;V.addEventListener('scroll',()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{if(!pages.length)return;const top=V.getBoundingClientRect().top+V.clientHeight/3;let c=1;for(const d of pages){if(d.getBoundingClientRect().bottom>top){c=+d.dataset.n;break}}if(c!==cur){cur=c;$('#pn').value=c;$('#bm').classList.toggle('on',meta.bm.includes(c));dirty()}})});
+$('#bm').onclick=()=>{if(!pdf)return;const i=meta.bm.indexOf(cur);i<0?meta.bm.push(cur):meta.bm.splice(i,1);meta.bm.sort((a,b)=>a-b);$('#bm').classList.toggle('on',i<0);buildList();dirty()};
+$('#dk').onclick=()=>{document.body.classList.toggle('dark');try{localStorage.dk=document.body.classList.contains('dark')?1:''}catch(e){}};
+try{if(localStorage.dk)document.body.classList.add('dark')}catch(e){}
+// ---- sidebar ----
+function buildList(){const L=[];for(const n in anns)anns[n].forEach(a=>L.push([+n,a]));L.sort((a,b)=>a[0]-b[0]);
+ $('#lst').innerHTML=L.map(([n,a])=>`<div class="it" data-p="${n}"><b>পৃ.${n}</b> ${ico[a.t]} ${a.x2?esc(a.x2):''}</div>`).join('')||'<small>এখনো কোনো মার্ক নেই</small>';
+ $('#bml').innerHTML=(meta?.bm||[]).map(n=>`<div class="it" data-p="${n}">⭐ পৃষ্ঠা ${n}</div>`).join('')||'<small>নেই</small>'}
+$('#side').onclick=e=>{const i=e.target.closest('[data-p]');i&&goPage(+i.dataset.p)};
+$('#sq').onkeydown=async e=>{if(e.key!=='Enter'||!pdf)return;const q=e.target.value.trim().toLowerCase();if(!q)return;const out=$('#sr'),R=[];out.textContent='খুঁজছি…';
+ for(let n=1;n<=pdf.numPages&&R.length<80;n++){if(txt[n]==null)txt[n]=(await(await pdf.getPage(n)).getTextContent()).items.map(i=>i.str).join(' ');const t=txt[n],i=t.toLowerCase().indexOf(q);if(i>=0)R.push(`<div class="it" data-p="${n}"><b>পৃ.${n}</b> …${esc(t.slice(Math.max(0,i-25),i+55))}…</div>`)}
+ out.innerHTML=R.join('')||'<small>কিছু পাওয়া যায়নি</small>'};
+// ---- export (optional) ----
+$('#ex').onclick=async()=>{if(!pdf)return;try{const{PDFDocument,rgb}=PDFLib,doc=await PDFDocument.load(await curBlob.arrayBuffer()),c=h=>{const n=parseInt(h.slice(1),16);return rgb((n>>16)/255,((n>>8)&255)/255,(n&255)/255)};
+ doc.getPages().forEach((pg,i)=>{const{width:W,height:H}=pg.getSize(),X=v=>v*W,Y=v=>H-v*H;(anns[i+1]||[]).forEach(a=>{
+  if(a.r)a.r.forEach(r=>{if(a.t==='hl')pg.drawRectangle({x:X(r.x),y:Y(r.y+r.h),width:X(r.w),height:r.h*H,color:c(a.c),opacity:.4});else{const y=Y(a.t==='ul'?r.y+r.h:r.y+r.h/2);pg.drawLine({start:{x:X(r.x),y},end:{x:X(r.x+r.w),y},thickness:1.2,color:c(a.c)})}});
+  if(a.t==='rect')pg.drawRectangle({x:X(a.x),y:Y(a.y+a.h),width:X(a.w),height:a.h*H,borderColor:c(a.c),borderWidth:a.lw});
+  if(a.t==='pen')for(let k=1;k<a.p.length;k++)pg.drawLine({start:{x:X(a.p[k-1][0]),y:Y(a.p[k-1][1])},end:{x:X(a.p[k][0]),y:Y(a.p[k][1])},thickness:a.lw,color:c(a.c)});
+  if(a.t==='note')pg.drawRectangle({x:X(a.x),y:Y(a.y)-14,width:14,height:14,color:rgb(1,.85,0)})})});
+ const b=new Blob([await doc.save()],{type:'application/pdf'});await saveBlob(b,meta.name.replace(/\.pdf$/i,'')+'-marked.pdf')}catch(e){alert('এক্সপোর্ট করা গেল না: '+e.message)}};
+// ---- Gemini ----
+const MODELS=[['gemini-2.5-flash','Gemini 2.5 Flash (ডিফল্ট · দ্রুত)'],['gemini-2.5-pro','Gemini 2.5 Pro (সবচেয়ে শক্তিশালী)'],['gemini-2.5-flash-lite','Gemini 2.5 Flash-Lite (খুব দ্রুত/হালকা)'],['gemini-2.0-flash','Gemini 2.0 Flash'],['gemini-flash-latest','Gemini Flash (সর্বশেষ)'],['gemini-pro-latest','Gemini Pro (সর্বশেষ)']];
+const LS={g:k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},s:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const cfg=()=>({key:LS.g('gk'),model:LS.g('gm')||'gemini-2.5-flash',custom:LS.g('gc'),lang:LS.g('gl')||'বাংলা'});
+const QP=[['বিস্তারিত ব্যাখ্যা','এই অংশটি সহজ ভাষায় বিস্তারিত ব্যাখ্যা করো। গুরুত্বপূর্ণ শব্দ ও ধারণা আলাদা করে বুঝিয়ে দাও।'],['সারাংশ','এই অংশের সংক্ষিপ্ত সারাংশ দাও, মূল পয়েন্টগুলো তালিকা করে।'],['অনুবাদ','এই অংশের লেখা বাংলায় অনুবাদ করো।'],['লেখা তোলা (OCR)','ছবির সব লেখা হুবহু তুলে দাও।'],['টেবিল/চার্ট','ছবির টেবিল বা চার্টের ডেটা সাজিয়ে ব্যাখ্যা করো।'],['সমাধান করো','এটি কোনো প্রশ্ন/অংক হলে ধাপে ধাপে সমাধান করো।'],['উদাহরণ','বিষয়টি বোঝার জন্য বাস্তব উদাহরণ দাও।'],['কঠিন শব্দের অর্থ','কঠিন শব্দগুলোর অর্থ বাংলায় লেখো।'],['MCQ বানাও','এই অংশ থেকে ৫টি বহুনির্বাচনী প্রশ্ন (MCQ) উত্তরসহ বানাও।'],['ইংরেজিতে অনুবাদ','এই অংশের লেখা ইংরেজিতে অনুবাদ করো।'],['খুব সহজ করে','একদম সহজ ভাষায়, ছোট ছাত্রকে বোঝানোর মতো করে ব্যাখ্যা করো।'],['বুলেট পয়েন্ট','মূল পয়েন্টগুলো বুলেট আকারে ছোট ছোট লাইনে লেখো।'],['প্রশ্ন–উত্তর','এই অংশ থেকে সম্ভাব্য গুরুত্বপূর্ণ প্রশ্ন ও তার উত্তর তৈরি করো।'],['মনে রাখার টিপস','এটি মনে রাখার জন্য সহজ কৌশল বা মনে রাখার টিপস দাও।'],['বানান/ব্যাকরণ ঠিক','লেখাটির বানান ও ব্যাকরণ ভুল ঠিক করে দেখাও।'],['মূল ধারণা','এই অংশের মূল ধারণা ও উদ্দেশ্য এক-দুই লাইনে বলো।']];
+const md=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/^#{1,4} (.+)$/gm,'<h4>$1</h4>').replace(/^[*-] (.+)$/gm,'• $1').replace(/\n/g,'<br>');
+function fillModels(sel,val){sel.innerHTML=MODELS.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('');const c=LS.g('gc');if(c)sel.insertAdjacentHTML('beforeend',`<option value="${esc(c)}">${esc(c)} (নিজের)</option>`);sel.value=val}
+function showSet(msg){const c=cfg();fillModels($('#sm'),c.model);$('#sk').value=c.key;$('#sc').value=c.custom;$('#sl').value=c.lang;if(msg)$('#sn').textContent=msg;$('#set').classList.remove('hide')}
+$('#gs').onclick=()=>showSet();$('#scl').onclick=()=>$('#set').classList.add('hide');
+$('#ssv').onclick=()=>{LS.s('gk',$('#sk').value.trim());LS.s('gc',$('#sc').value.trim());LS.s('gm',$('#sc').value.trim()||$('#sm').value);LS.s('gl',$('#sl').value);$('#set').classList.add('hide')};
+$('#skx').onclick=()=>{LS.s('gk','');$('#sk').value=''};
+let QX=[];try{QX=JSON.parse(LS.g('qx')||'[]')}catch(e){}
+const allQ=()=>[...QP,...QX],saveQ=()=>LS.s('qx',JSON.stringify(QX));
+const GD=new Set();function qHtml(){return allQ().map((q,i)=>`<button data-q="${i}">${esc(q[0])}${i>=QP.length?'<span data-x="'+(i-QP.length)+'" title="মুছুন">×</span>':''}</button>`).join('')+'<button class="gqa on" title="প্রশ্নের ঘরে লিখে এটি চাপলে সেই লেখাই নতুন সাজেশন হবে">＋ সাজেশন</button>'}function renderQ(){GD.forEach(e=>e._rq())}
+let gz=100,lastEl=null,multi=LS.g('mw')==='1';
+function mkDlg(o,q){
+ const el=$('#gt').content.firstElementChild.cloneNode(true),$$=s=>el.querySelector(s);let ai={contents:[],last:'',lastQ:''};
+ document.body.appendChild(el);GD.add(el);
+ const front=()=>{el.style.zIndex=++gz;lastEl=el};el.addEventListener('pointerdown',front,true);
+ const nn=GD.size-1,ww=Math.min(440,innerWidth-20);el.style.width=ww+'px';el.style.left=Math.max(8,innerWidth-ww-16-(nn%5)*30)+'px';el.style.top=60+(nn%5)*30+'px';
+function addMsg(c,h){const m=document.createElement('div');m.className='mg '+c;m.innerHTML=h;$$('.gchat').appendChild(m);m.scrollIntoView({block:'nearest'});return m}
+async function ask(q){q=(q||'').trim();if(!q)return;ai.lastQ=q;const c=cfg();if(!c.key)return showSet('আগে API Key দিন।');const model=$$('.gm').value;LS.s('gm',model);
+ const parts=[];if(!ai.contents.length){if(ai.img)parts.push({inline_data:{mime_type:'image/jpeg',data:ai.img.split(',')[1]}});if(ai.text)parts.push({text:'প্রসঙ্গ (PDF থেকে নেওয়া লেখা):\n'+ai.text})}
+ parts.push({text:q});ai.contents.push({role:'user',parts});addMsg('u',esc(q));$$('.gp').value='';const w=addMsg('m','⏳ ভাবছে…');
+ try{const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':c.key},
+  body:JSON.stringify({systemInstruction:{parts:[{text:'তুমি একজন সহায়ক শিক্ষক ও বিশ্লেষক। ব্যবহারকারী একটি PDF-এর অংশ নিয়ে প্রশ্ন করছে। উত্তর দাও '+c.lang+' ভাষায়, পরিষ্কার, গুছিয়ে ও বিস্তারিত।'}]},contents:ai.contents})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error?.message||('HTTP '+r.status));
+  const t=(j.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('')||'(কোনো উত্তর আসেনি'+(j.promptFeedback?.blockReason?' — '+j.promptFeedback.blockReason:'')+')';
+  ai.contents.push({role:'model',parts:[{text:t}]});ai.last=t;w.innerHTML=md(t)}
+ catch(e){ai.contents.pop();w.textContent='❌ '+e.message+' (API Key/মডেল/ইন্টারনেট চেক করুন)'}}
+$$('.gs').onclick=()=>ask($$('.gp').value);$$('.gp').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask($$('.gp').value)}};
+$$('.gq').onclick=e=>{const x=e.target.closest('[data-x]');
+ if(x){const i=+x.dataset.x;if(confirm('"'+QX[i][0]+'" সাজেশনটি মুছবেন?')){QX.splice(i,1);saveQ();renderQ()}return}
+ if(e.target.closest('.gqa')){const p=$$('.gp').value.trim()||(prompt('সাজেশনের টেক্সট (Gemini-কে যা বলবে):')||'').trim();if(!p)return;const l=(prompt('বাটনের নাম:',p.slice(0,16))||'').trim();if(!l)return;QX.push([l,p]);saveQ();renderQ();return}
+ const b=e.target.closest('[data-q]');b&&ask(allQ()[+b.dataset.q][1])};
+$$('.gca').onclick=()=>ai.last&&copyText(ai.last);
+$$('.gci').onclick=()=>ai.cv&&ai.cv.toBlob(b=>copyImage(b).then(()=>$$('.gci').textContent='✓ কপি হয়েছে',()=>alert('ছবি কপি হলো না, “ছবি সেভ” ব্যবহার করুন')));
+$$('.gdl').onclick=()=>{if(!ai.cv)return;ai.cv.toBlob(b=>saveBlob(b,'pdf-crop-p'+ai.n+'.png'))};
+$$('.gnote').onclick=()=>{if(!ai.last||!ai.n)return;const d=pages[ai.n-1];snap();(anns[ai.n]??=[]).push({t:'note',c:color,x:ai.x??.05,y:ai.y??.05,x2:ai.last.slice(0,3000)});after(d);$$('.gnote').textContent='✓ নোটে রাখা হয়েছে'};
+$$('.gop').oninput=e=>el.style.opacity=e.target.value/100;
+let hh='';$$('.gmin').onclick=()=>{const m=$$('.gb').classList.toggle('hide');if(m){hh=el.style.height;el.style.height='auto';el.style.resize='none'}else{el.style.height=hh;el.style.resize=''}};
+$$('.gi').onclick=e=>e.target.style.maxHeight=e.target.style.maxHeight?'':'none';
+const chatText=()=>[...$$('.gchat').children].map(m=>(m.classList.contains('u')?'প্রশ্ন: ':'উত্তর: ')+m.innerText).join('\n\n');
+$$('.grg').onclick=()=>{if(!ai.lastQ)return;const c=$$('.gchat');if(ai.contents.length&&ai.contents[ai.contents.length-1].role==='model'){ai.contents.pop();ai.contents.pop()}
+ c.lastElementChild&&c.lastElementChild.remove();c.lastElementChild&&c.lastElementChild.remove();ask(ai.lastQ)};
+$$('.gcl').onclick=()=>{ai.contents=[];ai.last='';ai.lastQ='';$$('.gchat').innerHTML=''};
+$$('.gcc').onclick=()=>{const t=chatText();t&&copyText(t)};
+$$('.gtx').onclick=()=>{const t=chatText();if(!t)return;saveBlob(new Blob([t],{type:'text/plain;charset=utf-8'}),'gemini-chat'+(ai.n?'-p'+ai.n:'')+'.txt')};
+$$('.gsp').onclick=()=>{if(speechSynthesis.speaking){speechSynthesis.cancel();return}if(!ai.last)return;const u=new SpeechSynthesisUtterance(ai.last.replace(/[*#`]/g,''));u.lang='bn-BD';speechSynthesis.speak(u)};
+ el._rq=()=>{$$('.gq').innerHTML=qHtml()};
+ el._init=(o,q)=>{ai={contents:[],last:'',lastQ:'',...o};$$('.gchat').innerHTML='';$$('.gp').value='';fillModels($$('.gm'),cfg().model);el._rq();
+  $$('.gi').classList.toggle('hide',!o.img);if(o.img)$$('.gi').src=o.img;['.gci','.gdl'].forEach(i=>$$(i).classList.toggle('hide',!o.img));el.classList.remove('hide');front();
+  if(!cfg().key)showSet('আগে আপনার Gemini API Key দিন (aistudio.google.com/apikey থেকে ফ্রি পাওয়া যায়)।');else if(q)ask(q)};
+ $$('.gx').onclick=()=>{el.remove();GD.delete(el);if(lastEl===el)lastEl=[...GD].pop()||null};
+ $$('.gnw').onclick=()=>mkDlg({img:ai.img,cv:ai.cv,n:ai.n,x:ai.x,y:ai.y,text:ai.text});
+ $$('.gnp').onclick=()=>{const v=($$('.gn').value.trim()||ai.last||'').slice(0,3000);if(!v)return alert('আগে নোটের লেখা লিখুন (বা Gemini-র উত্তর আনুন)');placing={v,done:()=>{$$('.gn').value=''}};document.body.classList.add('placing');$('#st').textContent='📍 PDF-এর যেকোনো জায়গায় ক্লিক করুন (Esc = বাতিল)'};
+ (()=>{const h=$$('.gh');let ox,oy,dr=0;
+  h.addEventListener('pointerdown',e=>{if(e.target.closest('button,select,input'))return;dr=1;const r=el.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;h.setPointerCapture(e.pointerId)});
+  h.addEventListener('pointermove',e=>{if(!dr)return;el.style.left=Math.max(0,Math.min(innerWidth-80,e.clientX-ox))+'px';el.style.top=Math.max(0,Math.min(innerHeight-40,e.clientY-oy))+'px'});
+  h.addEventListener('pointerup',()=>dr=0)})();
+ el._init(o,q);return el}
+function openAI(o,q){const e=!multi&&lastEl&&GD.has(lastEl)?lastEl:null;e?e._init(o,q):mkDlg(o,q)}
+$('#mw').classList.toggle('on',multi);
+$('#mw').onclick=()=>{multi=!multi;LS.s('mw',multi?'1':'');$('#mw').classList.toggle('on',multi);$('#st').textContent=multi?'🪟 প্রতিবার নতুন Gemini উইন্ডো খুলবে':'🪟 একটি Gemini উইন্ডোই ব্যবহার হবে'};
+async function cropAsk(d,x0,y0,x1,y1){const n=+d.dataset.n,p=await pdf.getPage(n),v1=p.getViewport({scale:1});
+ let sc=Math.min(4,Math.max(1.5,2400/(v1.width*Math.max(.15,x1-x0))));while(v1.width*v1.height*sc*sc>16e6)sc*=.85;
+ const vp=p.getViewport({scale:sc}),full=document.createElement('canvas');full.width=vp.width;full.height=vp.height;const fc=full.getContext('2d');fc.fillStyle='#fff';fc.fillRect(0,0,full.width,full.height);
+ await p.render({canvasContext:fc,viewport:vp}).promise;
+ const sx=x0*vp.width,sy=y0*vp.height,sw=(x1-x0)*vp.width,sh=(y1-y0)*vp.height,cv=document.createElement('canvas');cv.width=sw;cv.height=sh;cv.getContext('2d').drawImage(full,sx,sy,sw,sh,0,0,sw,sh);
+ openAI({img:cv.toDataURL('image/jpeg',.92),cv,n,x:Math.min(.95,x1),y:y0})}
+// ---- right-click menu ----
+const CM=$('#cm');let ctx;
+V.addEventListener('contextmenu',e=>{if(!pdf)return;e.preventDefault();const d=e.target.closest('.page'),sel=getSelection().toString().trim();ctx={d,sel,pt:d?P(e,d):null,n:d?+d.dataset.n:cur};
+ const it=[];if(sel)it.push(['🖍 হাইলাইট','hl'],['U̲ আন্ডারলাইন','ul'],['S̶ কাটা দাগ','st'],['🤖 Gemini: ব্যাখ্যা করো','ex'],['🌐 Gemini: বাংলায় অনুবাদ','tr'],['📋 কপি','cp'],['🔎 Google-এ খুঁজুন','gg'],'-');
+ it.push(['✂️ এলাকা সিলেক্ট → Gemini-কে জিজ্ঞেস','crop'],['📄 এই পুরো পৃষ্ঠা → Gemini','page']);if(d)it.push('-',['📝 এখানে নোট যোগ করুন','note'],['⭐ বুকমার্ক (চালু/বন্ধ)','bm']);it.push('-',['⚙ Gemini সেটিংস','set']);
+ CM.innerHTML=it.map(x=>x==='-'?'<hr>':`<div data-a="${x[1]}">${x[0]}</div>`).join('');CM.classList.remove('hide');
+ CM.style.left=Math.max(4,Math.min(e.clientX,innerWidth-CM.offsetWidth-6))+'px';CM.style.top=Math.max(4,Math.min(e.clientY,innerHeight-CM.offsetHeight-6))+'px'});
+CM.onmousedown=e=>e.preventDefault();
+CM.onclick=e=>{const b=e.target.closest('[data-a]');CM.classList.add('hide');if(!b)return;const a=b.dataset.a,{d,sel,pt,n}=ctx;
+ if(['hl','ul','st'].includes(a))selMark(a);
+ else if(a==='ex')openAI({text:sel,n,x:pt?.[0],y:pt?.[1]},QP[0][1]);
+ else if(a==='tr')openAI({text:sel,n,x:pt?.[0],y:pt?.[1]},QP[2][1]);
+ else if(a==='cp')copyText(sel);
+ else if(a==='gg')openUrl('https://www.google.com/search?q='+encodeURIComponent(sel));
+ else if(a==='crop')$('[data-t=crop]').click();
+ else if(a==='page')cropAsk(d||pages[cur-1],0,0,1,1);
+ else if(a==='note'){const v=prompt('নোট লিখুন:');if(v){snap();(anns[n]??=[]).push({t:'note',c:color,x:pt[0],y:pt[1],x2:v});after(d)}}
+ else if(a==='bm')$('#bm').click();
+ else if(a==='set')showSet()};
+addEventListener('mousedown',e=>{if(!CM.contains(e.target))CM.classList.add('hide')});V.addEventListener('scroll',()=>CM.classList.add('hide'));
+// ---- shortcuts ----
+const TN={sel:'✋ পড়া',hl:'🖍 হাইলাইট',ul:'U আন্ডারলাইন',st:'S কাটা',pen:'✏️ কলম',rect:'▭ বক্স',note:'📝 নোট',text:'T টেক্সট',eraser:'🧽 ইরেজার',crop:'✂️ এলাকা→Gemini'};
+const DK={sel:'KeyV',hl:'KeyH',ul:'KeyU',st:'KeyK',pen:'KeyP',rect:'KeyB',note:'KeyN',text:'KeyT',eraser:'KeyE',crop:'KeyS'};
+let KEYS={...DK};try{Object.assign(KEYS,JSON.parse(LS.g('kbm2')||'{}'))}catch(e){}
+const kd=c=>c?c.replace(/^Key|^Digit/,''):'—';
+document.querySelectorAll('#tools [data-t]').forEach(b=>b.dataset.ti=b.title);
+function applyKeys(){document.querySelectorAll('#tools [data-t]').forEach(b=>{const k=KEYS[b.dataset.t];b.title=b.dataset.ti+(k?' ['+kd(k)+']':'')})}applyKeys();
+function hotkey(e){const t=Object.keys(KEYS).find(k=>KEYS[k]&&KEYS[k]===e.code);
+ if(t){e.preventDefault();const b=$('[data-t='+t+']');b.click();$('#st').textContent='টুল: '+b.dataset.ti;return}
+ const m=e.code.match(/^Digit([1-6])$/);if(m){const w=document.querySelectorAll('.sw')[m[1]-1];if(w){e.preventDefault();w.click()}return}
+ if(e.code==='BracketLeft'||e.code==='BracketRight'){e.preventDefault();const L=$('#lw');L.selectedIndex=Math.max(0,Math.min(L.options.length-1,L.selectedIndex+(e.code==='BracketRight'?1:-1)));$('#st').textContent='✏️ মোটা: '+L.value}}
+function drawKb(){$('#kbl').innerHTML=Object.keys(TN).map(t=>`<div class="rw"><span style="flex:1">${TN[t]}</span><input readonly data-k="${t}" value="${kd(KEYS[t])}" style="width:90px;text-align:center"></div>`).join('')}
+$('#kbl').addEventListener('keydown',e=>{const i=e.target.closest('[data-k]');if(!i||e.code==='Tab')return;e.preventDefault();const t=i.dataset.k;
+ if(e.code==='Backspace'||e.code==='Delete')KEYS[t]='';
+ else if(/^(Key[A-Z]|F([1-9]|1[0-2])|Comma|Period|Slash|Semicolon|Quote|Backquote|Minus|Equal)$/.test(e.code)){for(const k in KEYS)if(KEYS[k]===e.code)KEYS[k]='';KEYS[t]=e.code}else return;
+ LS.s('kbm2',JSON.stringify(KEYS));drawKb();applyKeys()});
+$('#kbb').onclick=()=>{drawKb();$('#kb').classList.remove('hide')};$('#kbc').onclick=()=>$('#kb').classList.add('hide');
+$('#kbr').onclick=()=>{KEYS={...DK};LS.s('kbm2','');drawKb();applyKeys()};
+// ---- note anywhere ----
+let placing=null;
+function cancelPlace(){placing=null;document.body.classList.remove('placing')}
+V.addEventListener('pointerdown',()=>{const a=document.activeElement;if(a&&a.closest&&a.closest('.gd'))a.blur()},true);
+showLib();
+</script>
+<script src="mobile.js"></script></body></html>

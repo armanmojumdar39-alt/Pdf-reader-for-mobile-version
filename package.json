@@ -1,0 +1,26 @@
+{
+  "name": "pdf-marker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PDF রিডার ও মার্কার — মোবাইল অ্যাপ",
+  "scripts": {
+    "prepare-web": "node scripts/prepare-web.js",
+    "sync": "npm run prepare-web && npx cap sync android",
+    "build:apk": "npm run sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/browser": "^6.0.3",
+    "@capacitor/clipboard": "^6.0.1",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/filesystem": "^6.0.2",
+    "@capacitor/share": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.2",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "3.11.174"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

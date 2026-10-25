@@ -1,0 +1,12 @@
+{
+  "appId": "com.pdfmarker.app",
+  "appName": "PDF মার্কার",
+  "webDir": "www",
+  "backgroundColor": "#e9ecf2",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "StatusBar": { "overlaysWebView": false }
+  }
+}
